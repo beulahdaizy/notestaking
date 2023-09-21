@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="Description" content="Note Taking" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+      integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <title>Note Taking</title>
+  </head>
+  <style>
+    .centre-box {
+      height: 250px;
+      width: 250px;
+      background-color: rgb(209, 232, 241);
+      position: relative;
+      top: 50px;
+      left: 50px;
+      border-radius: 5px;
+    }
+    i {
+      height: 100px;
+      width: 100px;
+      font-size: 8rem;
+      position: relative;
+      top: 60px;
+    }
+  </style>
+  <body>
+    <div class="container-fluid vh-100 vw-100 bg-dark">
+      <div class="row row-cols-2 row-cols-4 g-2 g-lg-3">
+        <div class="col">
+          <div class="centre-box text-center">
+            <i class="fa-regular fa-note-sticky" id="openNoteModal"></i>
+          </div>
+        </div>
+        <div class="col text-white ms-5 ps-3" id="notesList"></div>
+      </div>
+    </div>
+    <div
+      class="modal fade"
+      id="addNoteModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="addNoteModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addNoteModalLabel">Add a New Note</h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="noteTitle">Title:</label>
+              <input type="text" class="form-control" id="noteTitle" />
+            </div>
+            <div class="form-group">
+              <label for="noteDescription">Description:</label>
+              <textarea
+                class="form-control"
+                id="noteDescription"
+                rows="4"
+              ></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" id="addNoteButton">
+              Add Note
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap and jQuery scripts (make sure you have these libraries included) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const openModalButton = document.getElementById("openNoteModal");
+        const noteTitleInput = document.getElementById("noteTitle");
+        const noteDescriptionInput = document.getElementById("noteDescription");
+        const saveNoteButton = document.getElementById("addNoteButton");
+        const notesList = document.getElementById("notesList");
+
+        // Function to add a new note or edit an existing note
+        function saveNote() {
+          const title = noteTitleInput.value.trim();
+          const description = noteDescriptionInput.value.trim();
+          const date = new Date().toLocaleDateString();
+
+          if (title === "" || description === "") {
+            alert("Please enter both title and description.");
+            return;
+          }
+
+          if (editingNote) {
+            // Update an existing note
+            const editedNote = {
+              title: title,
+              description: description,
+              date: date,
+            };
+            const index = notes.indexOf(editingNote);
+            notes[index] = editedNote;
+            editingNote = null;
+          } else {
+            // Create a new note
+            const newNote = {
+              title: title,
+              description: description,
+              date: date,
+            };
+            notes.push(newNote);
+          }
+
+          updateNotesDisplay();
+          clearNoteInputs();
+          $("#addNoteModal").modal("hide"); // Close the modal
+          saveNotesToLocalStorage();
+        }
+
+        // Function to clear note inputs
+        function clearNoteInputs() {
+          noteTitleInput.value = "";
+          noteDescriptionInput.value = "";
+        }
+
+        // Function to display notes on the web page
+        function updateNotesDisplay() {
+          notesList.innerHTML = "";
+          notes.forEach((note, index) => {
+            const noteElement = document.createElement("div");
+            noteElement.classList.add("note");
+            noteElement.innerHTML = `
+                <h3>${note.title}</h3>
+                <p>${note.description}</p>
+                <p>Date: ${note.date}</p>
+                <button class="btn btn-primary edit-note" data-index="${index}">Edit</button>
+                <button class="btn btn-danger delete-note" data-index="${index}">Delete</button>
+            `;
+            notesList.appendChild(noteElement);
+          });
+        }
+
+        // Function to save notes to local storage
+        function saveNotesToLocalStorage() {
+          localStorage.setItem("notes", JSON.stringify(notes));
+        }
+
+        // Function to load notes from local storage
+        function loadNotesFromLocalStorage() {
+          const storedNotes = localStorage.getItem("notes");
+          return storedNotes ? JSON.parse(storedNotes) : [];
+        }
+
+        // Initialize the notes array with data from local storage
+        let notes = loadNotesFromLocalStorage();
+        let editingNote = null; // To track the note being edited
+
+        // Attach click event listeners
+        openModalButton.addEventListener("click", () => {
+          clearNoteInputs();
+          editingNote = null;
+          $("#addNoteModal").modal("show"); // Open the modal for adding a new note
+        });
+
+        saveNoteButton.addEventListener("click", saveNote);
+
+        // Delegate click events to edit and delete buttons within notes
+        notesList.addEventListener("click", function (event) {
+          const target = event.target;
+          if (target.classList.contains("edit-note")) {
+            // Edit note
+            const index = target.getAttribute("data-index");
+            const noteToEdit = notes[index];
+            noteTitleInput.value = noteToEdit.title;
+            noteDescriptionInput.value = noteToEdit.description;
+            editingNote = noteToEdit;
+            $("#openNoteModal").modal("show"); // Open the modal for editing the note
+          } else if (target.classList.contains("delete-note")) {
+            // Delete note
+            const index = target.getAttribute("data-index");
+            notes.splice(index, 1);
+            updateNotesDisplay();
+            saveNotesToLocalStorage();
+          }
+        });
+
+        // Initial display of notes
+        updateNotesDisplay();
+      });
+    </script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>
